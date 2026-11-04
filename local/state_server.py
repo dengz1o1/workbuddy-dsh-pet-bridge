@@ -15,6 +15,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 import threading
 import time
@@ -27,7 +28,34 @@ MAX_TASK = 40
 MAX_BODY = 8192
 MAX_POLL_MS = 15000
 
+# 权限确认时"保守呈现"：只暴露工具类别，不带命令内容、文件路径、参数。
+# 宁可少说，也不让命令行里的路径/密钥被屏幕边上的人看见。
+TOOL_ALIAS = {
+    "Bash": "要执行命令",
+    "Write": "要写文件",
+    "Edit": "要改文件",
+    "MultiEdit": "要改文件",
+    "NotebookEdit": "要改文件",
+    "Read": "要读文件",
+    "WebFetch": "要联网抓取",
+    "WebSearch": "要联网搜索",
+}
+
 log = logging.getLogger("state")
+
+
+def permission_task(tool):
+    """把工具名变成一句人话。取不到工具名就退回笼统说法。"""
+    if not tool:
+        return "等你确认"
+    return (TOOL_ALIAS.get(tool) or ("要用 " + tool)) + "，等你点"
+
+
+def tool_from_message(message):
+    """从 'CodeBuddy needs your permission to use Bash' 里取工具名。"""
+    m = re.search(r"use\s+([A-Za-z_][\w]*)\s*\.?\s*$", message or "")
+    return m.group(1) if m else ""
+
 
 # WorkBuddy 事件 -> dsh-pet 档位。改文案只改这里，注意 task 上限 40 个字符。
 def map_event(payload):
@@ -47,13 +75,18 @@ def map_event(payload):
             return {"state": "working", "task": "正在派活给子代理"}
         return {"state": "working", "task": "正在调用工具"}
     if ev == "PermissionRequest":
-        return {"state": "waiting", "task": "等你确认"}
+        return {"state": "waiting", "task": permission_task(payload.get("tool_name") or "")}
     if ev == "Notification":
-        # idle_prompt = 「AI 干完了，等你输入」，语义是空闲而不是等待。
-        # 映射成 waiting 会让桌宠永久停在等待动作（waiting 优先级最高且不会自清）。
-        if payload.get("notification_type") == "idle_prompt":
+        ntype = payload.get("notification_type")
+        if ntype == "permission_prompt":
+            tool = payload.get("tool_name") or tool_from_message(payload.get("message"))
+            return {"state": "waiting", "task": permission_task(tool)}
+        if ntype == "idle_prompt":
+            # 「AI 干完了，等你输入」语义是空闲，不是等待。
+            # 映射成 waiting 会让桌宠永久停在等待动作（waiting 优先级最高且不会自清）。
             return {"state": None}
-        return {"state": "waiting", "task": "需要你看一眼"}
+        # auth_success 等其余通知：不动状态。之前一律当 waiting，导致登录成功也摆等待动作。
+        return None
     if ev == "Stop":
         return {"state": "success", "task": "这轮做完了"}
     if ev == "SubagentStop":
@@ -237,7 +270,8 @@ def setup_logging(debug):
     console.setFormatter(fmt)
     log.addHandler(console)
 
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "state-server.log")
+    path = os.environ.get("PET_LOG") or os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "state-server.log")
     try:
         fh = RotatingFileHandler(path, maxBytes=1024 * 1024, backupCount=2, encoding="utf-8")
         fh.setFormatter(fmt)

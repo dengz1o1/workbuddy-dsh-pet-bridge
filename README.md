@@ -62,13 +62,16 @@ WorkBuddy 所在机器（被控端）            桌宠所在机器（主控端�
 | `PreToolUse`（读类工具） | `working` | 正在读资料 |
 | `PreToolUse`（写类工具） | `working` | 正在改文件 |
 | `PreToolUse`（Bash） | `working` | 正在执行命令 |
-| `PermissionRequest` | `waiting` | 等你确认 |
-| `Notification`（非 idle） | `waiting` | 需要你看一眼 |
-| `Notification`（idle_prompt） | *清空* | — |
+| `PermissionRequest` | `waiting` | 要写文件，等你点 |
+| `Notification`（`permission_prompt`） | `waiting` | 要执行命令，等你点 |
+| `Notification`（`idle_prompt`） | *清空* | — |
+| `Notification`（其他，如 `auth_success`） | *忽略，不改状态* | — |
 | `Stop` | `success` | 这轮做完了 |
 | `SessionEnd` | *清空* | — |
 
 > `task` 字段上限 40 个字符，服务端会自动截断。
+
+**权限确认只显示工具类别，不显示命令内容。** 提示语形如「要执行命令，等你点」「要写文件，等你点」——刻意不带命令行、文件路径和参数，因为这条文案会一直挂在屏幕上直到你点掉。工具名与中文的对应关系在 `state_server.py` 的 `TOOL_ALIAS` 里，可直接增改。
 
 ## 技术栈与依赖
 

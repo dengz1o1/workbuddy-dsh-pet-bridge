@@ -1,0 +1,82 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -m 0.3 --data-binary @- -H \"content-type: application/json\" http://127.0.0.1:8787/event",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -m 0.3 --data-binary @- -H \"content-type: application/json\" http://127.0.0.1:8787/event",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -m 0.3 --data-binary @- -H \"content-type: application/json\" http://127.0.0.1:8787/event",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -m 0.3 --data-binary @- -H \"content-type: application/json\" http://127.0.0.1:8787/event",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -m 0.3 --data-binary @- -H \"content-type: application/json\" http://127.0.0.1:8787/event",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -m 0.3 --data-binary @- -H \"content-type: application/json\" http://127.0.0.1:8787/event",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -m 0.3 --data-binary @- -H \"content-type: application/json\" http://127.0.0.1:8787/event",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
